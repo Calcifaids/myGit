@@ -1,3 +1,6 @@
+#include <LiquidCrystal.h>
+
+
 /*
 * analog_blink_rate.ino
 *
@@ -6,6 +9,8 @@
 *
 */
 // set pin numbers
+const int rs = 13, en = 12, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 const int warningLed = 11;
 const int temperatureLed = 10;
 const int warningPotPin = A0;
@@ -13,10 +18,13 @@ const int heatingPotPin = A1;
 const int tempPin = A2;
 const int millisDelay = 5000;
 // initialise the state of the led
+int writeState = 0;
 int warningState = LOW;
 int heatingState = LOW;
 int temperature, warningLimit, heatingLimit;
+int intermediary;
 float tempMiliVoltage;
+unsigned long timeStamp = 0;
 unsigned long previousTime = 0;
 
 // set up the initial states of the program
@@ -26,13 +34,17 @@ void setup(){
   // set the pin i/o
   pinMode(warningLed, OUTPUT);
   pinMode(temperatureLed, OUTPUT);
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+  // Print a message to the LCD.
+  lcd.print("hello, world!");
 }
 // main program
 void loop(){
   /*Sample Pots for limits*/
   warningLimit = setWarning();
   heatingLimit = setHeating();
-  
+
   // get the value of the pot
   int tempVal = analogRead(tempPin);
   tempMiliVoltage = (tempVal * 5.0) / 1024;
@@ -61,14 +73,30 @@ void loop(){
 
   if ((millis() - previousTime) >= millisDelay){
     previousTime = millis();
-  
     Serial.print("Temp = ");
     Serial.println(temperature, DEC);
     Serial.print("Warning = ");
     Serial.println(warningLimit);
     Serial.print("Heating Limit = ");
     Serial.println(heatingLimit);
-    
+    if (writeState == 0){
+    writeState = 1;
+      lcd.clear();
+      lcd.setCursor(0,0);
+      temperature = (int)temperature;
+      lcd.print("Temp = %d", temperature);
+      lcd.setCursor(0,1);
+      lcd.print("Warning Limit = %d", warningLimit);
+    }
+    else{
+      writeState = 0;
+      lcd.clear();
+      lcd.setCursor(0,0);
+      temperature = (int)temperature;
+      lcd.print("Temp = %d", temperature);
+      lcd.setCursor(0,1);
+      lcd.print("Warning Limit = %d", heatingLimit);
+    }
   }
 }
 
@@ -87,3 +115,4 @@ int setHeating(){
   heatingValue = (heatingValue * 25) / 1024;
   return heatingValue;
 }
+
