@@ -77,25 +77,29 @@ void loop(){
     Serial.println(temperature, DEC);
     Serial.print("Warning = ");
     Serial.println(warningLimit);
-    Serial.print("Heating Limit = ");
+    Serial.print("Heating  = ");
     Serial.println(heatingLimit);
     if (writeState == 0){
     writeState = 1;
       lcd.clear();
       lcd.setCursor(0,0);
       temperature = (int)temperature;
-      lcd.print("Temp = %d", temperature);
+      lcd.print("Temp = ");
+      lcd.println(temperature);
       lcd.setCursor(0,1);
-      lcd.print("Warning Limit = %d", warningLimit);
+      lcd.print("Warning = ");
+      lcd.println(warningLimit);
     }
     else{
       writeState = 0;
       lcd.clear();
       lcd.setCursor(0,0);
       temperature = (int)temperature;
-      lcd.print("Temp = %d", temperature);
+      lcd.print("Temp = ");
+      lcd.println(temperature);
       lcd.setCursor(0,1);
-      lcd.print("Warning Limit = %d", heatingLimit);
+      lcd.print("Heating = ");
+      lcd.println(heatingLimit);
     }
   }
 }
