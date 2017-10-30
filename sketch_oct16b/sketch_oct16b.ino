@@ -8,7 +8,7 @@
   IPAddress subnet(255, 255, 255, 0);
   
   //Change me on startup
-  byte mac[] = {0x90, 0xA2, 0xDA, 0x0F, 0xF5, 0xDE};
+  byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x44, 0xB6};
 
   const int potPin = A0;
   const int ldrPin = A1;
@@ -112,7 +112,9 @@ void readPot(int pot, EthernetClient client){
    client.println("</b></br>");
 }
 
-void readLDR
+void readLDR(){
+  
+}
 
 void triggerPin(int pinNumber, EthernetClient client){
   client.print("Turning on pin <b>");
