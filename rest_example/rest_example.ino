@@ -16,7 +16,9 @@ byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x44, 0xB6};
 
 aREST rest = aREST();
 
-int lightLevel;
+int lightLevel, potLevel, tempLevel;
+int sensorMax = 0;
+int sensorMin = 1023;
 
 void setup() {
   // put your setup code here, to run once:
@@ -26,11 +28,29 @@ void setup() {
   //Set pin modes
   pinMode(3, OUTPUT);
   pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
   
-  //Init light level and expose to restAPI
+  //Calibrate LDR
+  Serial.println("Please calibrate LDR now.");
+  while (millis() < 5000){
+    int sensorVal = analogRead(A0);
+    if (sensorVal > sensorMax){
+      sensorMax = sensorVal;
+    }
+    if (sensorVal < sensorMin){
+      sensorMin = sensorVal;
+    }
+  }
+  Serial.println("Calibration Finished.");
+  
+  //Init adc tied components and expose to restAPI
   lightLevel = 0;
+  potLevel = 0;
+  tempLevel = 0;
   rest.variable("light_level", &lightLevel);
-    
+  rest.variable("pot_level", &potLevel);
+  rest.variable("temp_level", &tempLevel);
   rest.function("led", led_control);
   
   rest.set_id("001");
@@ -50,7 +70,21 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  //Get light
   lightLevel = analogRead(A0);
+  lightLevel = map(lightLevel, sensorMin, sensorMax, 0, 100);
+  if (lightLevel >= sensorMax){
+    lightLevel = 100; 
+  }
+  
+  //Get pot
+  potLevel = analogRead(A1);
+  
+  //Get temp
+  tempLevel = analogRead(A2);
+  float tempConv = (tempLevel * 5.0) / 1024.0;
+  tempConv = (tempConv - 0.5) * 100;
+  tempLevel = tempConv;
   
   EthernetClient client = server.available();
   rest.handle(client);
