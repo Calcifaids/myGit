@@ -12,13 +12,15 @@ IPAddress ip(192, 168, 0, 11);
 IPAddress gateway(192, 168, 0, 254);
 IPAddress subnet(255, 255, 255, 0);
 
-byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x44, 0xB6};
+byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x3B, 0xC6};
 
 aREST rest = aREST();
 
 int lightLevel, potLevel, tempLevel;
 int sensorMax = 0;
 int sensorMin = 1023;
+uint8_t led = 3;
+int pwm;
 
 void setup() {
   // put your setup code here, to run once:
@@ -26,7 +28,11 @@ void setup() {
   Serial.println("Starting rest web service on arduino ...");
   
   //Set pin modes
+  //A0 ldr, A1 pot, A2 temp
   pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(A2, INPUT);
@@ -52,6 +58,8 @@ void setup() {
   rest.variable("pot_level", &potLevel);
   rest.variable("temp_level", &tempLevel);
   rest.function("led", led_control);
+  rest.function("switch_led", switch_led);
+  rest.function("random_number", random_number);
   
   rest.set_id("001");
   rest.set_name("callums_arduino");
@@ -95,10 +103,44 @@ int led_control(String command){
   Serial.print("Command is ");
   Serial.println(command);
  
-  int pwm = command.toInt();
+  pwm = command.toInt();
   pwm = constrain(pwm, 0, 255);
  
-  analogWrite(3, pwm);
-
+  analogWrite(led, pwm);
   return 1; 
+}
+
+int switch_led(String command){
+  Serial.print("Command is ");
+  Serial.println("switch led");
+  
+  //all off
+  digitalWrite(3, LOW);
+  digitalWrite(4, LOW);
+  digitalWrite(5, LOW);
+  digitalWrite(6, LOW);
+  
+  led ++;
+  switch (led){
+    case 4:
+      analogWrite(led, pwm);
+    break;
+    case 5:
+      analogWrite(led, pwm);
+    break;
+    case 6:
+      analogWrite(led, pwm);
+    break;
+    case 7:
+      led = 3;
+      analogWrite(led, pwm);
+    break;
+  }
+  return 1;
+}
+
+int random_number(String command){
+  uint8_t randomVar = random(1,6); 
+  
+  return randomVar;
 }
