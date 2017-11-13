@@ -45,15 +45,11 @@ void loop() {
   if (!client.connected()) {
     reconnect();
   }
+  //Publish rng every 5s
   if (millis() > timestamp + 5000) {
     timestamp = millis();
-    //Generate RNG and publish
-    int rando = random(100);
-    String randoString = String(rando, DEC);
-    char mystring[5];
-    randoString.toCharArray(mystring, 5);
-
-    client.publish("calcifaids/f/random-numbers", mystring);
+    send_rng();
+    send_light();
   } 
   client.loop();
 }
@@ -81,7 +77,7 @@ void reconnect() {
       //client.subscribe("calcifaids/f/#");
       client.subscribe("calcifaids/f/test-slider");
       client.subscribe("calcifaids/f/random-numbers");
-      //Publish rng every 5s
+      client.subscribe("calcifaids/f/light-levels");
     }
     else {
       Serial.print("Failed, rc = ");
@@ -94,3 +90,23 @@ void reconnect() {
 
 }
 
+void send_rng(){
+  if (client.connected()){
+    int rando = random(100);
+    String randoString = String(rando, DEC);
+    char mystring[5];
+    randoString.toCharArray(mystring, 5);
+
+    client.publish("calcifaids/f/random-numbers", mystring);
+  }
+}
+
+void send_light(){
+  if (client.connected()){
+    int light = analogRead(A0);
+    
+    char light_level[5];
+    sprintf(light_level, "%i", light);
+    client.publish("calcifaids/f/light-levels",light_level);
+  }
+}
