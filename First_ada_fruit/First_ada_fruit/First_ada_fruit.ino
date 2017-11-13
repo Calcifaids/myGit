@@ -1,6 +1,8 @@
+#include <PubSubClient.h>
 #include <SPI.h>
 #include <Ethernet2.h>
-#include <PubSubClient.h>
+
+
 
 byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x3B, 0xC6};
 
@@ -14,6 +16,9 @@ IPAddress subnet(255, 255, 255, 0);
 EthernetClient ethernet_client;
 PubSubClient client(ethernet_client);
 
+//Programme wide variables
+long timestamp = millis();
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -22,7 +27,7 @@ void setup() {
   client.setServer("io.adafruit.com", 1883);
   client.setCallback(callback);
 
-  if(Ethernet.begin(mac) == 0){
+  if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure ethernet using DHCP");
     Ethernet.begin(mac, ip);
   }
@@ -37,36 +42,48 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if (!client.connected()){
+  if (!client.connected()) {
     reconnect();
   }
+  if (millis() > timestamp + 5000) {
+    timestamp = millis();
+    //Generate RNG and publish
+    int rando = random(100);
+    String randoString = String(rando, DEC);
+    char mystring[5];
+    randoString.toCharArray(mystring, 5);
 
+    client.publish("calcifaids/f/random-numbers", mystring);
+  } 
   client.loop();
 }
 
 
-void callback(char* topic, byte* payload, unsigned int length){
+void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++){
+  for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
 }
 
-void reconnect(){
-  while(!client.connected()){
+void reconnect() {
+  while (!client.connected()) {
     Serial.println("Attempting MQTT Connection...");
 
-    if(client.connect("Callums_Arduino", "calcifaids", "bb027dc7a55644929190949f85d6ac1b")){
+    if (client.connect("Callums_Arduino", "calcifaids", "bb027dc7a55644929190949f85d6ac1b")) {
       Serial.println("... connected");
 
-      client.publish("calcifaids/f/status-messages","we are alive!");
+      client.publish("calcifaids/f/status-messages", "we are alive!");
 
-      client.subscribe("calcifaids/f/#");
+      //client.subscribe("calcifaids/f/#");
+      client.subscribe("calcifaids/f/test-slider");
+      client.subscribe("calcifaids/f/random-numbers");
+      //Publish rng every 5s
     }
-    else{
+    else {
       Serial.print("Failed, rc = ");
       Serial.print(client.state());
       Serial.println(" trying again in 5 seconds");
@@ -74,6 +91,6 @@ void reconnect(){
       delay(5000);
     }
   }
-  
+
 }
 
