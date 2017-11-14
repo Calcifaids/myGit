@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <Ethernet2.h>
 
-
+void calibrate_ldr(uint16_t *maxL, uint16_t *minL);
 
 byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x3B, 0xC6};
 
@@ -18,6 +18,8 @@ PubSubClient client(ethernet_client);
 
 //Programme wide variables
 long timestamp = millis();
+uint16_t maxLdr = 0;
+uint16_t minLdr = 1023;
 
 void setup() {
   // put your setup code here, to run once:
@@ -34,10 +36,21 @@ void setup() {
 
   //Delay to ensure all set up ok
   delay(1500);
-
   Serial.print("MQTT client is at: ");
   Serial.println(Ethernet.localIP());
-
+  Serial.println("begin LDR calibration now");
+  delay(1000);
+  timestamp = millis();
+  //Sync LDR
+  while (millis() < timestamp + 5000){
+    calibrate_ldr(&maxLdr, &minLdr);
+  }
+  Serial.println("Calibration ended");
+  Serial.print("Max raw = ");
+  Serial.println(maxLdr);
+  Serial.print("Min raw = ");
+  Serial.println(minLdr);
+  
 }
 
 void loop() {
@@ -49,7 +62,7 @@ void loop() {
   if (millis() > timestamp + 5000) {
     timestamp = millis();
     send_rng();
-    send_light();
+    send_light(&maxLdr, &minLdr);
   } 
   client.loop();
 }
@@ -101,12 +114,29 @@ void send_rng(){
   }
 }
 
-void send_light(){
+void calibrate_ldr(uint16_t *maxL, uint16_t *minL){
+  int light = analogRead(A0);
+  if (light > *maxL){
+    *maxL= light;
+  }
+  if (light < *minL){
+    *minL = light;
+  }
+}
+
+void send_light(uint16_t *maxL, uint16_t *minL){
   if (client.connected()){
     int light = analogRead(A0);
-    
+    //remap light to percentage
+    light = map(light, *minL, *maxL, 0, 100);
+    if(light >= *maxL){
+      light = 100;
+    }
     char light_level[5];
     sprintf(light_level, "%i", light);
     client.publish("calcifaids/f/light-levels",light_level);
   }
 }
+
+
+
