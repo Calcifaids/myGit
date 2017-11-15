@@ -5,6 +5,7 @@
 void calibrate_ldr(uint16_t *maxL, uint16_t *minL);
 
 byte mac[] = {0x90, 0xA2, 0xDA, 0x11, 0x3B, 0xC6};
+const char warningLed = 7;
 
 //Setup for Home Network
 IPAddress ip(192, 168, 1, 250);
@@ -23,6 +24,7 @@ uint16_t minLdr = 1023;
 
 void setup() {
   // put your setup code here, to run once:
+  pinMode(warningLed, OUTPUT);
   Serial.begin(9600);
   Serial.println("Starting MQTT client on Arudino...");
 
@@ -63,6 +65,7 @@ void loop() {
     timestamp = millis();
     send_rng();
     send_light(&maxLdr, &minLdr);
+    send_pot();
   } 
   client.loop();
 }
@@ -91,6 +94,7 @@ void reconnect() {
       client.subscribe("calcifaids/f/test-slider");
       client.subscribe("calcifaids/f/random-numbers");
       client.subscribe("calcifaids/f/light-levels");
+      client.subscribe("calcifaids/f/pot-levels");
     }
     else {
       Serial.print("Failed, rc = ");
@@ -135,8 +139,24 @@ void send_light(uint16_t *maxL, uint16_t *minL){
     char light_level[5];
     sprintf(light_level, "%i", light);
     client.publish("calcifaids/f/light-levels",light_level);
+    //Control warning led here? Maybe move elsewhere and speed up the LED interraction?
+    //Change to use a user defined value?
+    if (light < 30){
+      digitalWrite(warningLed, HIGH);
+    }
+    else{
+      digitalWrite(warningLed, LOW);
+    }
   }
 }
 
+void send_pot(){
+  if (client.connected()){
+    int pot = analogRead(A1);
+    char pot_level[5];
+    sprintf(pot_level, "%i", pot);
+    client.publish("calcifaids/f/pot-levels",pot_level);
+  }
 
+}
 
