@@ -55,7 +55,7 @@ void loop() {
     reconnect();
   }
   
-  updateLightState();
+  updateLightState(&maxLevel, &minLevel);
   digitalWrite(3, ledState);
 
   
@@ -152,6 +152,7 @@ void reconnect() {
       char stringBuffer[3];
       threshString.toCharArray(stringBuffer, 3);
       client.publish("calcifaids/f/light-threshold",stringBuffer);
+      client.publish("calcifaids/f/toggle-threshold","OFF");
     }
     else {
       Serial.print("Failed, rc = ");
@@ -163,14 +164,18 @@ void reconnect() {
   }
 }
 
-void updateLightState(){
+void updateLightState(uint16_t *maxL, uint16_t *minL){
   if (toggleButton == HIGH){
     int light = analogRead(A0);
-    if (light <= threshold){
-      ledState = HIGH;
+    light = map(light, *minL, *maxL, 0, 100);
+    if(light >= *maxL){
+      light = 100;
+    }
+    if (light >= threshold){
+      ledState = LOW;
     }
     else{
-      ledState = LOW;
+      ledState = HIGH;
     }
   }
   else{
