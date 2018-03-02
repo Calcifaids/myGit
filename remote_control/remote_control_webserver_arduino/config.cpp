@@ -1,5 +1,5 @@
 #include "config.h"
-
+#include "FS.h"
 #include "login.h"
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -31,7 +31,7 @@ void setupAP(){
   server.on("/login", handleLogin);
   /*Add in 301 redirets*/
   server.on("/admin", handleAdmin);
-  server.on("/logout" , handleLogout);  
+  server.on("/logout", handleLogout);  
   server.onNotFound(handleNotFound);
 
   //Collect User-Agent & Cookie in http header

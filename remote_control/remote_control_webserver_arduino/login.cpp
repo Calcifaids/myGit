@@ -1,5 +1,6 @@
 #include "config.h"
 #include "login.h"
+#include "FS.h"
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h> 
@@ -9,8 +10,10 @@
 /*
  * Need to Add:
  * - Regeneration of cookies on the fly?
+ * - Regenerate cookies after set period of inactivity (preventing old cookies from being used)
  * - Better CSS
  * - Move large HTML files to their own file.
+ * - 
  */
 
 /*Convert to a file and serve file?*/
@@ -41,13 +44,22 @@ void handleRoot(){
     server.sendContent(header);
     return;
   }
-  //Remote code inserted here
-  server.send(200, "text/html", "You reached the User Page <a href='/logout'>Logout</a>");
+  //If Arg exists then not first call and should process button press
+  if(server.hasArg("userResponse")){
+    String returnedValue = server.arg("userResponse");
+    Serial.print("User response = ");
+    Serial.println(returnedValue);
+  }
+  else{
+    //Serve remote_control page
+    File remotePage = SPIFFS.open("/remote_control.html", "r");
+    server.streamFile(remotePage, "text/html");
+    return;
+  }
 }
 
 //Check correct admin cookie in place and direct to admin page
 void handleAdmin(){
-  Serial.println("in admin handler");
   if(!checkAdminAuth()){
     String header = "HTTP/1.1 301 OK\r\nLocation: /login\r\nCache-Control: no-cache\r\n\r\n";
     server.sendContent(header);
@@ -58,7 +70,6 @@ void handleAdmin(){
 
 //Post login form and handle response
 void handleLogin(){
-  Serial.println("in login handler");
   //Check if login info has been posted
   if(server.hasArg("user") && server.hasArg("pass")){
     //Check if basic user details correct
@@ -93,7 +104,7 @@ void handleLogout(){
   server.sendHeader("Set-Cookie", "admin=0");
   server.sendHeader("Location","/login");
   server.sendHeader("Cache-Control","no-cache");
-  server.send(301)
+  server.send(301);
 }
 
 //Itterate through alpha-num to generate 32 bit cookie

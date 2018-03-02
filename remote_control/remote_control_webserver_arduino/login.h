@@ -1,6 +1,6 @@
 #ifndef login_h
 #define login_h
-
+#include "FS.h"
 #include "config.h"
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -18,4 +18,6 @@ String generateCookie(String);
 bool checkUserAuth();
 bool checkAdminAuth();
 
+
+const char remote_Control_Page[] PROGMEM = "";
 #endif
