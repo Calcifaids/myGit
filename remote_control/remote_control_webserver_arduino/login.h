@@ -1,12 +1,15 @@
 #ifndef login_h
 #define login_h
+
 #include "FS.h"
 #include "config.h"
+#include "remote_control.h"
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
 #include <ArduinoOTA.h>
+
 
 void generateSession();
 void handleRoot();

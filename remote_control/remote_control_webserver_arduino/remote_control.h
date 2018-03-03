@@ -11,8 +11,12 @@
 #include <ArduinoOTA.h>
 #include "sigma_delta.h"
 
-void tx_Setup();
-void tx_Begin();
+void txSetup();
+bool checkTxMutex();
+void addToBuffer(uint8_t operation);
+void shiftOffBuffer();
+
+void txBegin();
 void preambleISR();
 void txBitTime();
 void txWaitTime();

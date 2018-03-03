@@ -1,4 +1,5 @@
 #include "config.h"
+#include "remote_control.h"
 #include "login.h"
 #include "FS.h"
 #include <Arduino.h>
@@ -12,8 +13,10 @@
  * - Regeneration of cookies on the fly?
  * - Regenerate cookies after set period of inactivity (preventing old cookies from being used)
  * - Better CSS
- * - Move large HTML files to their own file.
- * - 
+ * - Increase responsiveness of remote.html
+ * - Auto Generate user Password 
+ * - Add re-generate user password for admin
+ * 
  */
 
 /*Convert to a file and serve file?*/
@@ -49,6 +52,10 @@ void handleRoot(){
     String returnedValue = server.arg("userResponse");
     Serial.print("User response = ");
     Serial.println(returnedValue);
+    uint8_t sendCommand = atoi(returnedValue.c_str());
+
+    //Place into buffer to be processed when called form main
+    addToBuffer(sendCommand);    
   }
   else{
     //Serve remote_control page
@@ -65,7 +72,7 @@ void handleAdmin(){
     server.sendContent(header);
     return;
   }
-  server.send(200, "text/html", "You reached the Admin Page <a href='/logout'>Logout</a>");
+  server.send(200, "text/html", "You reached the Admin Page<cr>Click <a href='/'>here</a> to access the front end remote.<cr>  <a href='/logout'>Logout</a>");
 }
 
 //Post login form and handle response

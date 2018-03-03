@@ -20,13 +20,32 @@
  * 2812.5 = 562.5 us
  */
  
-uint8_t tvVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255;
+uint8_t tvVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0;
+
+//Change from const in later itterations to support multi address
+static const uint16_t deviceAddress = 0x40BE;
+/*
+* Operations are as follows:
+* 0: Power,   1: Mute,    2: Menu,    3: Source,    4: OK,   
+* 5: UP,      6: LEFT,    7: RIGHT,   8: DOWN,      9: Exit
+* 10: Vol +,  11: Ch +,   12: Vol -,  13: Ch -,     14: 1
+* 15: 2,      16: 3,      17: 4,      18: 5,        19: 6, 
+* 20: 7,      21: 8,      22: 9,      23: 0
+*/
+static const uint16_t opCodes[24] = {0x629D, 0x32CD, 0xA25D, 0xD22D, 0x52AD,
+                                    0x12ED, 0x728D, 0x926D, 0xB24D, 0xB04F,
+                                    0xF00F, 0x30CF, 0x5AA5, 0x9867, 0x807F,
+                                    0x40BF, 0xC03F, 0x20DF, 0xA05F, 0x609F,
+                                    0xE01F, 0x10EF, 0x906F, 0x00FF};
+
 /*COME BACK AND REMOVE ME AND JUST USE SINGLE BUFFEr*/
-unsigned long irCode = 0x40BE629D;
-unsigned long irCodeBuffer = 0x40BE629D;
+unsigned long irCodeBuffer;
 static uint8_t i = 0;
 
-void tx_Setup() {
+static uint8_t operationBuffer[8] = {0};
+
+
+void txSetup() {
   sigma_delta_enable();
   //Sigma Attached to D2 (GPIO 4)
   sigma_delta_attachPin(4);
@@ -35,10 +54,49 @@ void tx_Setup() {
   sigma_delta_setTarget(0);
 }
 
-//Begin preamble 9000us
-void tx_Begin() {
+
+bool checkTxMutex(){
+  //if in use return false
+  if (txMutex == 0 && operationBuffer[0] != 0){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+void addToBuffer(uint8_t operation){
+  for (int i = 0; i < 8; i++){
+    if(operationBuffer[i] == 0){
+      operationBuffer[i] = operation;
+      return;
+    }
+  }
+  Serial.println("If you have reached here, buffer is full and operation has been dropped");
+}
+
+void shiftOffBuffer(){
+  for (int i = 0; i < 8; i++){
+    if (operationBuffer[i] == 0){
+      //Finished itteration
+      return;
+    }
+    operationBuffer[i] = operationBuffer[i+1];
+  }
+}
+
+//Create full code, create preamble timer and start
+void txBegin() {
+  txMutex = 1;
   i = 0;
-  irCodeBuffer = irCode;
+  irCodeBuffer = irCodeBuffer | deviceAddress;
+  irCodeBuffer = irCodeBuffer << 16;
+  irCodeBuffer = irCodeBuffer | opCodes[operationBuffer[0]];
+  shiftOffBuffer();
+  Serial.print("Transmitting value ");
+  Serial.println(irCodeBuffer, HEX);
+
+  //Setup ISR & TX start preamble
   sigma_delta_setTarget(sigmaTarget);
   timer1_isr_init();
   timer1_attachInterrupt(preambleISR);
@@ -60,7 +118,7 @@ void txBitTime(){
   timer1_write(2813);
 }
 
-//Check opcode
+//Itterate through current bit of opCode each cycle delay respectively
 void txWaitTime(){
   sigma_delta_setTarget(0);
   if(i < 32){
@@ -78,7 +136,6 @@ void txWaitTime(){
     }
   }
   //Send stop bit
-  Serial.println("stop bit tx");
   sigma_delta_setTarget(sigmaTarget);
   timer1_attachInterrupt(txStopBit);
   timer1_write(2813);
@@ -86,5 +143,6 @@ void txWaitTime(){
 
 void txStopBit(){
   sigma_delta_setTarget(0);
+  txMutex = 0;
 }
 

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "remote_control.h"
 #include "FS.h"
 #include "login.h"
 #include <Arduino.h>
@@ -6,6 +7,7 @@
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
 #include <ArduinoOTA.h>
+
 
 const char *ssid = "CbrainesRemote";
 const char *password = "turnonthetv";
@@ -38,6 +40,8 @@ void setupAP(){
   const char * headerKeys[] = {"User-Agent","Cookie"} ;
   size_t headerKeysSize = sizeof(headerKeys)/sizeof(char*);
   server.collectHeaders(headerKeys, headerKeysSize );
+
+  txSetup();
   
   //Start HTTP server
   server.begin();
