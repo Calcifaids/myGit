@@ -42,6 +42,8 @@ void handleNotFound(){
 
 //Check correct user cookie in place and direct to root
 void handleRoot(){
+  unsigned long timestamp = millis();
+  Serial.println(timestamp);
   if (!checkUserAuth()){
     String header = "HTTP/1.1 301 OK\r\nLocation: /login\r\nCache-Control: no-cache\r\n\r\n";
     server.sendContent(header);
@@ -49,6 +51,7 @@ void handleRoot(){
   }
   //If Arg exists then not first call and should process button press
   if(server.hasArg("userResponse")){
+    server.send(204, "text/html");
     String returnedValue = server.arg("userResponse");
     Serial.print("User response = ");
     Serial.println(returnedValue);
@@ -61,6 +64,7 @@ void handleRoot(){
     //Serve remote_control page
     File remotePage = SPIFFS.open("/remote_control.html", "r");
     server.streamFile(remotePage, "text/html");
+    remotePage.close();
     return;
   }
 }

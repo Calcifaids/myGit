@@ -11,39 +11,74 @@ and open the template in the editor.
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
+            body{
+                background-color: #202020;
+            }
+            
             .remote_button {
             
             display:inline-block;
             position: relative;
-            color:#DDD;
-            border-radius: 5px;
+            color:#FFF;
             border: 4px;
-            background:#CD1414;
+            background:#808080;
             box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);
             vertical-align:middle;
             text-align: center;
-            width: 80px;
-            height: 80px;
+            width: 50px;
+            height: 24px;
             padding: 5px 5px 5px 5px;
             
             }
-         
-            .wrapper {
-             
+            
+            .remote_button.leftSide{
+                margin-top: 2px;
+                margin-bottom: 2px;
+                margin-right: 2px;
+                border-radius: 30px 5px 5px 30px;
             }
             
+            .remote_button.center{
+                margin-top: 2px;
+                margin-bottom: 2px;
+                margin-right: 2px;
+                margin-left: 2px;
+                border-radius: 5px 5px 5px 5px;
+            }
+                     
+            .remote_button.rightSide{
+                margin-top: 2px;
+                margin-bottom: 2px;
+                margin-left: 2px;
+                border-radius: 5px 30px 30px 5px;
+            }
+            
+            .remote_button.hidden{
+                margin-top: 2px;
+                margin-bottom: 2px;
+                margin-right: 2px;
+                margin-left: 2px;
+                border-radius: 5px 5px 5px 5px;
+                visibility: hidden;
+            }
+            
+            .filler{
+                height: 5px;
+            }
             .header{
                 display: table;
-                width:100%;
+                width:92%;
                 height: 60px;
-                text-align: center;
+                text-align: right;
+                margin-right: 4%;
+                margin-left: 4%;
             }
             
             .mid{
                 display: block;
-                margin-left: 9%;
-                margin-right: 9%;
-                width: 80%;
+                margin-left: 4%;
+                margin-right: 4%;
+                width: 92%;
                 margin-top: 2em;
             }
             
@@ -57,11 +92,7 @@ and open the template in the editor.
             .button_row{
                 padding:2px;
             }
-            
-            #logout{
-                
-            }
-            
+                       
             #side_lobe{
                 padding:1px;
                 margin-left: auto;
@@ -81,111 +112,165 @@ and open the template in the editor.
             }
             
             #message_popup{
-                opacity: 0;
-                width: auto;
+                
                 display:inline-block;
                 position: relative;
-                color:#444;
-                border-radius: 5px;
-                border: 4px;
-                background:#979ca3;
-                box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);
-                vertical-align:middle;
+                
+                visibility: hidden;
+                min-width: 240px;
+                margin-left: -136px;
+                background-color: #444;
+                color: #fff;
                 text-align: center;
-                width: auto;
-                height: auto;
-                padding: 5px 5px 5px 5px;
+                border-radius: 2px;
+                padding: 16px;
+                position: fixed;
+                z-index: 1;
+                left: 50%;
+                top: 30px;
+                font-size: 17px;
             }
+            
+            #message_popup.show{
+                visibility: visible;
+                -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+                animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            }
+            
+            #message_popup.cancel{
+                -visibility: hidden;
+                -webkit-animation: none !important;
+                animation: none !important;
+            }
+            
+            @-webkit-keyframes fadein {
+                from {top: 0; opacity: 0;} 
+                to {top: 30px; opacity: 1;}
+            }
+
+            @keyframes fadein {
+                from {top: 0; opacity: 0;}
+                to {top: 30px; opacity: 1;}
+            }
+
+            @-webkit-keyframes fadeout {
+                from {top: 30px; opacity: 1;} 
+                to {top: 0; opacity: 0;}
+            }
+
+            @keyframes fadeout {
+                from {top: 30px; opacity: 1;}
+                to {top: 0; opacity: 0;}
+            }
+            
         </style>
     </head>
     <body>
         <div class='wrapper'>
             <div class='header'>
-                <div id='side_lobe'>
-
-                </div>
-                <div id='center_lobe'>
-                    <div id='message_popup'>
-
-                    </div>
-                </div>
-                <div id='side_lobe'>
-                    <div id='logout'><a href='/logout'>Logout</a></div>
-                </div>  
+                <div id='message_popup'>
+            </div> 
+                    <div id='logout'><a href='/logout'>Logout</a></div> 
             </div>
             <div class='mid'>
                 <div class='container'>
                     <div class='button_row'>
-                        <button type='button' id='0' class='remote_button' onclick='parseButton(this.id)' value='1'>Button1</button>
-                        <button type='button' id='1' class='remote_button' onclick='parseButton(this.id)' value='2'>Button2</button>
-                        <button type='button' id='2' class='remote_button' onclick='parseButton(this.id)' value='3'>Button3</button>
+                        <button type='button' id='0' class='remote_button leftSide' onclick='parseButton(this.id)' value='1'>Power</button>
+                        <button type='button' id='1' class='remote_button hidden'></button>
+                        <button type='button' id='2' class='remote_button hidden'></button>
+                        <button type='button' id='3' class='remote_button rightSide' onclick='parseButton(this.id)' value='2'>Mute</button>
                     </div>
                     <div class='button_row'>
-                        <button type='button' id='3' class='remote_button' onclick='parseButton(this.id)' value='4'>Button4</button>
-                        <button type='button' id='4' class='remote_button' onclick='parseButton(this.id)' value='5'>Button5</button>
-                        <button type='button' id='5' class='remote_button' onclick='parseButton(this.id)' value='6'>Button6</button>
+                        <button type='button' id='4' class='remote_button leftSide' onclick='parseButton(this.id)' value='3'>Menu</button>
+                        <button type='button' id='5' class='remote_button hidden'></button>
+                        <button type='button' id='6' class='remote_button hidden'></button>
+                        <button type='button' id='7' class='remote_button rightSide' onclick='parseButton(this.id)' value='4'>Source</button>
+                    </div>
+                    <div class="filler"></div>
+                    <div class='button_row'>
+                        <button type='button' id='8' class='remote_button hidden'></button>
+                        <button type='button' id='9' class='remote_button center' onclick='parseButton(this.id)' value='6'>▲</button>
+                        <button type='button' id='10' class='remote_button hidden'></button>
                     </div>
                     <div class='button_row'>
-                        <button type='button' id='6' class='remote_button' onclick='parseButton(this.id)' value='7'>Button7</button>
-                        <button type='button' id='7' class='remote_button' onclick='parseButton(this.id)' value='8'>Button8</button>
-                        <button type='button' id='8' class='remote_button' onclick='parseButton(this.id)' value='9'>Button9</button>
+                        <button type='button' id='11' class='remote_button leftSide' onclick='parseButton(this.id)' value='7'>◄</button>
+                        <button type='button' id='12' class='remote_button center' onclick='parseButton(this.id)' value='5'>OK</button>
+                        <button type='button' id='13' class='remote_button rightSide' onclick='parseButton(this.id)' value='8'>►</button>
                     </div>
                     <div class='button_row'>
-                        <button type='button' id='9' class='remote_button' onclick='parseButton(this.id)' value='10'>Button10</button>
-                        <button type='button' id='10' class='remote_button' onclick='parseButton(this.id)' value='11'>Button11</button>
-                        <button type='button' id='11' class='remote_button' onclick='parseButton(this.id)' value='12'>Button12</button>
+                        <button type='button' id='14' class='remote_button hidden'></button>
+                        <button type='button' id='15' class='remote_button center' onclick='parseButton(this.id)' value='9'>▼</button>
+                        <button type='button' id='16' class='remote_button hidden'></button>
+                    </div>
+                    <div class="filler"></div>
+                    <div class='button_row'>
+                        <button type='button' id='17' class='remote_button leftSide' onclick='parseButton(this.id)' value='11'>Vol +</button>
+                        <button type='button' id='18' class='remote_button center' onclick='parseButton(this.id)' value='10'>Exit</button>
+                        <button type='button' id='19' class='remote_button rightSide' onclick='parseButton(this.id)' value='12'>Ch +</button>
+                    </div>
+                    <div class='button_row'>
+                        <button type='button' id='20' class='remote_button leftSide' onclick='parseButton(this.id)' value='13'>Vol -</button>
+                        <button type='button' id='21' class='remote_button hidden'></button>
+                        <button type='button' id='22' class='remote_button rightSide' onclick='parseButton(this.id)' value='14'>Ch -</button>
+                    </div>
+                    <div class="filler"></div>
+                    <div class='button_row'>
+                        <button type='button' id='23' class='remote_button leftSide' onclick='parseButton(this.id)' value='15'>1</button>
+                        <button type='button' id='24' class='remote_button center' onclick='parseButton(this.id)' value='16'>2</button>
+                        <button type='button' id='25' class='remote_button rightSide' onclick='parseButton(this.id)' value='17'>3</button>
+                    </div>
+                    <div class='button_row'>
+                        <button type='button' id='26' class='remote_button leftSide' onclick='parseButton(this.id)' value='18'>4</button>
+                        <button type='button' id='27' class='remote_button center' onclick='parseButton(this.id)' value='19'>5</button>
+                        <button type='button' id='28' class='remote_button rightSide' onclick='parseButton(this.id)' value='20'>6</button>
+                    </div>
+                    <div class='button_row'>
+                        <button type='button' id='29' class='remote_button leftSide' onclick='parseButton(this.id)' value='21'>7</button>
+                        <button type='button' id='30' class='remote_button center' onclick='parseButton(this.id)' value='22'>8</button>
+                        <button type='button' id='31' class='remote_button rightSide' onclick='parseButton(this.id)' value='23'>9</button>
+                    </div>
+                    <div class='button_row'>
+                        <button type='button' id='32' class='remote_button hidden'></button>
+                        <button type='button' id='33' class='remote_button center' onclick='parseButton(this.id)' value='24'>0</button>
+                        <button type='button' id='34' class='remote_button hidden'></button>
                     </div>
                 </div>
             </div>
             <div class='footer'></div>
+                
 
-        </div>
+            </div>
+        
         
         <script language='JavaScript' type='text/javascript'>
+            var timeout;
+            var loopCheck = 0;
             function parseButton(pressedId){
                 var xmlhttp;
                 xmlhttp = new XMLHttpRequest();
                 var sendCode = "userResponse=" + document.getElementById(pressedId).value;
                 xmlhttp.open('POST','/',true);
                 xmlhttp.setRequestHeader('Content-type',' application/x-www-form-urlencoded');
-                xmlhttp.setRequestHeader('Content-Disposition','name=userResponse')
+                xmlhttp.setRequestHeader('Content-Disposition','name=userResponse');
                 xmlhttp.send(sendCode);
-                
-
-                var passElement = document.getElementById('message_popup');
+            
+            
+                var messageBar = document.getElementById('message_popup');
                 document.getElementById('message_popup').innerHTML = document.getElementById(pressedId).innerHTML + ' pressed';
                 
-                fadeIn(passElement);
-                setTimeout(function(){fadeOut(passElement)},1000);
+                if (loopCheck === 1 ){
+                    clearTimeout(timeout);
+                    messageBar.className = messageBar.className.replace("show", "cancel"); 
+                }
+                loopCheck = 1;
+                
+                messageBar.className = "show";
+
+                timeout = setTimeout(function(){ 
+                    messageBar.className = messageBar.className.replace("show", "");
+                    loopCheck = 0;
+                }, 3000);
             }
-            
-            function fadeIn(element){
-                var opacityValue = 0.1;
-                element.style.visibility = 'visible';
-                element.style.display ='inline-block';
-                var timer = setInterval(function (){
-                    if (opacityValue >= 1){
-                        clearInterval(timer);
-                    }
-                    element.style.opacity = opacityValue;
-                    element.style.filter = 'alpha(opacity=' + opacityValue * 100 + ')';
-                    opacityValue = opacityValue + opacityValue * 0.2;
-                }, 10);
-            }
-            
-            function fadeOut(element){
-                var opacityValue = 1;  // initial opacity
-                var timer = setInterval(function () {
-                    if (opacityValue <= 0.1){
-                        clearInterval(timer);
-                        element.style.visibility = 'hidden';
-                    }
-                    element.style.opacity = opacityValue;
-                    element.style.filter = 'alpha(opacity=' + opacityValue * 100 + ')';
-                    opacityValue = opacityValue - opacityValue * 0.2;
-                }, 50);
-            }           
-            
         </script>    
     </body>
 </html>

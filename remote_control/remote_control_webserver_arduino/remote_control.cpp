@@ -26,13 +26,13 @@ uint8_t tvVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescale
 static const uint16_t deviceAddress = 0x40BE;
 /*
 * Operations are as follows:
-* 0: Power,   1: Mute,    2: Menu,    3: Source,    4: OK,   
-* 5: UP,      6: LEFT,    7: RIGHT,   8: DOWN,      9: Exit
-* 10: Vol +,  11: Ch +,   12: Vol -,  13: Ch -,     14: 1
-* 15: 2,      16: 3,      17: 4,      18: 5,        19: 6, 
-* 20: 7,      21: 8,      22: 9,      23: 0
+* 1: Power,   2: Mute,    3: Menu,    4: Source,    5: OK,   
+* 6: UP,      7: LEFT,    8: RIGHT,   9: DOWN,      10: Exit
+* 11: Vol +,  12: Ch +,   13: Vol -,  14: Ch -,     15: 1
+* 16: 2,      17: 3,      18: 4,      19: 5,        20: 6, 
+* 21: 7,      22: 8,      23: 9,      24: 0
 */
-static const uint16_t opCodes[24] = {0x629D, 0x32CD, 0xA25D, 0xD22D, 0x52AD,
+static const uint16_t opCodes[25] = {0, 0x629D, 0x32CD, 0xA25D, 0xD22D, 0x52AD,
                                     0x12ED, 0x728D, 0x926D, 0xB24D, 0xB04F,
                                     0xF00F, 0x30CF, 0x5AA5, 0x9867, 0x807F,
                                     0x40BF, 0xC03F, 0x20DF, 0xA05F, 0x609F,
@@ -42,7 +42,7 @@ static const uint16_t opCodes[24] = {0x629D, 0x32CD, 0xA25D, 0xD22D, 0x52AD,
 unsigned long irCodeBuffer;
 static uint8_t i = 0;
 
-static uint8_t operationBuffer[8] = {0};
+static int8_t operationBuffer[8] = {0};
 
 
 void txSetup() {
@@ -79,9 +79,11 @@ void shiftOffBuffer(){
   for (int i = 0; i < 8; i++){
     if (operationBuffer[i] == 0){
       //Finished itteration
+      Serial.println("finished the shift");
       return;
     }
     operationBuffer[i] = operationBuffer[i+1];
+    Serial.println("In the operation shift");
   }
 }
 
@@ -143,6 +145,8 @@ void txWaitTime(){
 
 void txStopBit(){
   sigma_delta_setTarget(0);
+  unsigned long timestamp = millis();
+  Serial.println(timestamp);
   txMutex = 0;
 }
 
