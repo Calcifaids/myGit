@@ -20,7 +20,8 @@
  * 2812.5 = 562.5 us
  */
  
-uint8_t tvVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0;
+uint8_t tvVolume = 10, resetVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0, macroFlag = 0;
+int32_t delayTime;
 
 //Change from const in later itterations to support multi address
 static const uint16_t deviceAddress = 0x40BE;
@@ -40,7 +41,7 @@ static const uint16_t opCodes[25] = {0, 0x629D, 0x32CD, 0xA25D, 0xD22D, 0x52AD,
 
 /*COME BACK AND REMOVE ME AND JUST USE SINGLE BUFFEr*/
 unsigned long irCodeBuffer;
-static uint8_t i = 0;
+static uint8_t iterator = 0;
 
 static int8_t operationBuffer[8] = {0};
 
@@ -90,14 +91,95 @@ void shiftOffBuffer(){
 //Create full code, create preamble timer and start
 void txBegin() {
   txMutex = 1;
-  i = 0;
-  irCodeBuffer = irCodeBuffer | deviceAddress;
-  irCodeBuffer = irCodeBuffer << 16;
-  irCodeBuffer = irCodeBuffer | opCodes[operationBuffer[0]];
-  shiftOffBuffer();
-  Serial.print("Transmitting value ");
-  Serial.println(irCodeBuffer, HEX);
+  iterator = 0;
+  //Check for power command
+  if(operationBuffer[0] == 1){
+    //TV turning on
+    if(power == 0){
+      //macroFlag value dictates action
+      macroFlag = 1;
+      power = 1;
+      delayTime = 495000;
+      irCodeBuffer = irCodeBuffer | deviceAddress;
+      irCodeBuffer = irCodeBuffer << 16;
+      irCodeBuffer = irCodeBuffer | opCodes[1];
+      shiftOffBuffer();
+      Serial.print("Transmitting value ");
+      Serial.println(irCodeBuffer, HEX);
+    
+      startPreamble();
+    }
+    //TV turning off
+    else{
+      Serial.println("in TV turning off section");
+      /*FIX VOLUME ADJUST WHEN OFF*/
+      //Setup blocking mutex
+      txMutex = 2;
+      macroFlag = 2;
+      /*!!CLEAR BUFFER HERE!!*/
+      for (int i = 0; i < 8; i++){
+        operationBuffer[i] = 0;
+      }
+      //Determine size 
+      int8_t macroVolumeChange = tvVolume - resetVolume;
+      //Check and send first volume change + send to hold
+      if (macroVolumeChange < 0){
+        //volume up
+        volumeUp();
+      }
+      else if (macroVolumeChange > 0){
+        //Volume down 
+        volumeDown();
+      }
+      else{
+        //set flag to 3 & start from channel
+        macroFlag = 3;
+        //Send Ch 1
+        irCodeBuffer = irCodeBuffer | deviceAddress;
+        irCodeBuffer = irCodeBuffer << 16;
+        irCodeBuffer = irCodeBuffer | opCodes[15];
+        
+        Serial.print("Transmitting value ");
+        Serial.println(irCodeBuffer, HEX);
+      
+        startPreamble();
+      }
+    }
+  }
+  //Do normal
+  else{
+    switch(operationBuffer[0]){
+      case 11:
+        //Volume up
+        if (tvVolume < 100){
+          tvVolume ++;
+          Serial.print("New volume = ");
+          Serial.println(tvVolume);
+        }
+        break;
+      case 13:
+        //Volume down
+        if (tvVolume > 0){
+          tvVolume --;
+          Serial.print("New volume = ");
+          Serial.println(tvVolume);
+        }
+        break;
+    }
 
+    irCodeBuffer = irCodeBuffer | deviceAddress;
+    irCodeBuffer = irCodeBuffer << 16;
+    irCodeBuffer = irCodeBuffer | opCodes[operationBuffer[0]];
+    shiftOffBuffer();
+    Serial.print("Transmitting value ");
+    Serial.println(irCodeBuffer, HEX);
+  
+    startPreamble();
+  }
+}
+
+
+void startPreamble(){
   //Setup ISR & TX start preamble
   sigma_delta_setTarget(sigmaTarget);
   timer1_isr_init();
@@ -123,8 +205,8 @@ void txBitTime(){
 //Itterate through current bit of opCode each cycle delay respectively
 void txWaitTime(){
   sigma_delta_setTarget(0);
-  if(i < 32){
-    i++;
+  if(iterator < 32){
+    iterator++;
     timer1_attachInterrupt(txBitTime);
     if(irCodeBuffer & 0x80000000){
        timer1_write(8438);
@@ -147,6 +229,94 @@ void txStopBit(){
   sigma_delta_setTarget(0);
   unsigned long timestamp = millis();
   Serial.println(timestamp);
+  //Check if delay needed for macro power ON/OFF
+  if(macroFlag == 0){
+    txMutex = 0;
+    Serial.println("Freeing mutex");
+  }
+  else if(macroFlag == 1){
+    Serial.println(F("Delaying to make sure the TV is clear for operation"));
+    timer1_attachInterrupt(powerOnDelay);
+    timer1_write(delayTime);
+  }
+  else if(macroFlag == 2){
+    //Continue changing volume
+    if (tvVolume < resetVolume){
+      tvVolume ++;
+      //Send volume up command
+      volumeUp();
+    }
+    else if(tvVolume > resetVolume){
+      tvVolume --;
+      //Send volume down command
+      volumeDown();
+    }
+    else{
+      macroFlag = 3;
+      //Send Ch 1
+      irCodeBuffer = irCodeBuffer | deviceAddress;
+      irCodeBuffer = irCodeBuffer << 16;
+      irCodeBuffer = irCodeBuffer | opCodes[15];
+      Serial.print("Transmitting value ");
+      Serial.println(irCodeBuffer, HEX);
+    
+      startPreamble();
+    }
+  }
+  else if(macroFlag == 3){
+    macroFlag = 4;
+    //Send OK
+    irCodeBuffer = irCodeBuffer | deviceAddress;
+    irCodeBuffer = irCodeBuffer << 16;
+    irCodeBuffer = irCodeBuffer | opCodes[5];
+    Serial.print("Transmitting value ");
+    Serial.println(irCodeBuffer, HEX);
+  
+    startPreamble();
+  }
+  else{
+    macroFlag = 1;
+    delayTime = 2000;
+    //Send power
+    irCodeBuffer = irCodeBuffer | deviceAddress;
+    irCodeBuffer = irCodeBuffer << 16;
+    irCodeBuffer = irCodeBuffer | opCodes[1];
+    Serial.print("Transmitting value ");
+    Serial.println(irCodeBuffer, HEX);
+  
+    startPreamble();
+  }
+  
+}
+
+void volumeUp(){
+  irCodeBuffer = irCodeBuffer | deviceAddress;
+  irCodeBuffer = irCodeBuffer << 16;
+  irCodeBuffer = irCodeBuffer | opCodes[11];
+  Serial.print("Transmitting value ");
+  Serial.println(irCodeBuffer, HEX);
+
+  startPreamble();
+}
+
+void volumeDown(){
+  irCodeBuffer = irCodeBuffer | deviceAddress;
+  irCodeBuffer = irCodeBuffer << 16;
+  irCodeBuffer = irCodeBuffer | opCodes[13];
+  Serial.print("Transmitting value ");
+  Serial.println(irCodeBuffer, HEX);
+
+  startPreamble();
+}
+
+void powerOnDelay(){
+  Serial.println("finished delay");
   txMutex = 0;
+  macroFlag = 0;
+}
+
+void delayThenHandle(){
+
+}
 }
 

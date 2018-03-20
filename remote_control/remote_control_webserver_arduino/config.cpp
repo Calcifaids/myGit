@@ -16,7 +16,7 @@ ESP8266WebServer server(80);
 
 void setupAP(){
   //Setup as Access Point
-  WiFi.softAP(ssid, password);
+  WiFi.softAP(ssid, password, 6);
   //Enable OTA
   ArduinoOTA.begin();
 

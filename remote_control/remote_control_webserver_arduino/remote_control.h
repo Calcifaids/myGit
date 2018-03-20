@@ -21,5 +21,10 @@ void preambleISR();
 void txBitTime();
 void txWaitTime();
 void txStopBit();
+void volumeUp();
+void volumeDown();
+void startPreamble();
+void powerOnDelay();
+void delayThenHandle();
 
 #endif

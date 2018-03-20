@@ -58,7 +58,10 @@ void handleRoot(){
     uint8_t sendCommand = atoi(returnedValue.c_str());
 
     //Place into buffer to be processed when called form main
-    addToBuffer(sendCommand);    
+    //if(txMutex <= 1){
+      addToBuffer(sendCommand);
+    //}
+    /*!!ADD ELSE HERE TO SEND BACK MESSAGE THAT TV IS LOCKED ATM!!*/
   }
   else{
     //Serve remote_control page
