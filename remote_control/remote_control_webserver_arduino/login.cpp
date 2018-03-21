@@ -57,11 +57,14 @@ void handleRoot(){
     Serial.println(returnedValue);
     uint8_t sendCommand = atoi(returnedValue.c_str());
 
-    //Place into buffer to be processed when called form main
-    //if(txMutex <= 1){
+    //Place in to buffer providing TV isn't turning ON or OFF
+    bool checkResult = checkToAddBuffer();
+    if (checkResult == true){
       addToBuffer(sendCommand);
-    //}
-    /*!!ADD ELSE HERE TO SEND BACK MESSAGE THAT TV IS LOCKED ATM!!*/
+    }
+    else{
+      Serial.println("System currently locked so cannot add to buffer.");
+    }
   }
   else{
     //Serve remote_control page

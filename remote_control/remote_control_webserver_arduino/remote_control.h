@@ -13,6 +13,7 @@
 
 void txSetup();
 bool checkTxMutex();
+bool checkToAddBuffer();
 void addToBuffer(uint8_t operation);
 void shiftOffBuffer();
 

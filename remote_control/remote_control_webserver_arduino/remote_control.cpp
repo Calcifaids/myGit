@@ -20,8 +20,8 @@
  * 2812.5 = 562.5 us
  */
  
-uint8_t tvVolume = 10, resetVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0, macroFlag = 0;
-int32_t delayTime;
+uint8_t tvVolume = 10, resetVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0, macroFlag = 0, delaySeconds = 0;
+int32_t delayTime = 5000000;
 
 //Change from const in later itterations to support multi address
 static const uint16_t deviceAddress = 0x40BE;
@@ -55,6 +55,15 @@ void txSetup() {
   sigma_delta_setTarget(0);
 }
 
+//Returns whether it's suitable to add to buffer.
+bool checkToAddBuffer(){
+  if (macroFlag == 0){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 
 bool checkTxMutex(){
   //if in use return false
@@ -99,8 +108,7 @@ void txBegin() {
       //macroFlag value dictates action
       macroFlag = 1;
       power = 1;
-      /*FIX DELAY*/
-      delayTime = 495000;
+      delaySeconds = 10;
       irCodeBuffer = irCodeBuffer | deviceAddress;
       irCodeBuffer = irCodeBuffer << 16;
       irCodeBuffer = irCodeBuffer | opCodes[1];
@@ -117,7 +125,7 @@ void txBegin() {
       //Setup blocking mutex
       txMutex = 2;
       macroFlag = 2;
-      /*!!CLEAR BUFFER HERE!!*/
+      //Clear operation buffer to prevent any unwanted 
       for (int i = 0; i < 8; i++){
         operationBuffer[i] = 0;
       }
@@ -150,25 +158,26 @@ void txBegin() {
   //Do normal
   else{
     /*MAKE MORE ROBIUST*/
-    switch(operationBuffer[0]){
-      case 11:
-        //Volume up
-        if (tvVolume < 100){
-          tvVolume ++;
-          Serial.print("New volume = ");
-          Serial.println(tvVolume);
-        }
-        break;
-      case 13:
-        //Volume down
-        if (tvVolume > 0){
-          tvVolume --;
-          Serial.print("New volume = ");
-          Serial.println(tvVolume);
-        }
-        break;
+    if (power != 0){
+      switch(operationBuffer[0]){
+        case 11:
+          //Volume up
+          if (tvVolume < 100){
+            tvVolume ++;
+            Serial.print("New volume = ");
+            Serial.println(tvVolume);
+          }
+          break;
+        case 13:
+          //Volume down
+          if (tvVolume > 0){
+            tvVolume --;
+            Serial.print("New volume = ");
+            Serial.println(tvVolume);
+          }
+          break;
+      }
     }
-
     irCodeBuffer = irCodeBuffer | deviceAddress;
     irCodeBuffer = irCodeBuffer << 16;
     irCodeBuffer = irCodeBuffer | opCodes[operationBuffer[0]];
@@ -235,7 +244,7 @@ void txStopBit(){
   //Check if delay needed for macro power ON/OFF
   if(macroFlag == 0){
     txMutex = 0;
-    Serial.println("Freeing mutex");
+    Serial.println(F("Freeing mutex"));
   }
   else if(macroFlag == 1){
     Serial.println(F("Delaying to make sure the TV is clear for operation"));
@@ -273,9 +282,19 @@ void volumeDown(){
 }
 
 void powerOnDelay(){
-  Serial.println("finished delay");
-  txMutex = 0;
-  macroFlag = 0;
+  static int i = 0;
+  //Recursively set timer until correct delay has passed
+  if (i < delaySeconds){
+    i++;
+    timer1_attachInterrupt(powerOnDelay);
+    timer1_write(delayTime);
+  }
+  else{
+    i = 0;
+    Serial.println("finished delay");
+    txMutex = 0;
+    macroFlag = 0;
+  }
 }
 
 void delayThenHandle(){
@@ -317,6 +336,7 @@ void delayThenHandle(){
   else{
     macroFlag = 1;
     power = 0;
+    delaySeconds = 3;
     //Send power
     irCodeBuffer = 0;
     irCodeBuffer = irCodeBuffer | deviceAddress;
@@ -327,6 +347,5 @@ void delayThenHandle(){
   
     startPreamble();
   }
-
 }
 
