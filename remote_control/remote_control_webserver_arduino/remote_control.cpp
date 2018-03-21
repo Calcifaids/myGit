@@ -99,6 +99,7 @@ void txBegin() {
       //macroFlag value dictates action
       macroFlag = 1;
       power = 1;
+      /*FIX DELAY*/
       delayTime = 495000;
       irCodeBuffer = irCodeBuffer | deviceAddress;
       irCodeBuffer = irCodeBuffer << 16;
@@ -148,6 +149,7 @@ void txBegin() {
   }
   //Do normal
   else{
+    /*MAKE MORE ROBIUST*/
     switch(operationBuffer[0]){
       case 11:
         //Volume up
@@ -219,6 +221,7 @@ void txWaitTime(){
       return;
     }
   }
+  iterator = 0;
   //Send stop bit
   sigma_delta_setTarget(sigmaTarget);
   timer1_attachInterrupt(txStopBit);
@@ -239,15 +242,51 @@ void txStopBit(){
     timer1_attachInterrupt(powerOnDelay);
     timer1_write(delayTime);
   }
-  else if(macroFlag == 2){
+  else {
+    timer1_attachInterrupt(delayThenHandle);
+    timer1_write(1000000);
+  }
+  
+  
+}
+
+void volumeUp(){
+  tvVolume ++;
+  irCodeBuffer = irCodeBuffer | deviceAddress;
+  irCodeBuffer = irCodeBuffer << 16;
+  irCodeBuffer = irCodeBuffer | opCodes[11];
+  Serial.print("Transmitting value ");
+  Serial.println(irCodeBuffer, HEX);
+
+  startPreamble();
+}
+
+void volumeDown(){
+  tvVolume --;
+  irCodeBuffer = irCodeBuffer | deviceAddress;
+  irCodeBuffer = irCodeBuffer << 16;
+  irCodeBuffer = irCodeBuffer | opCodes[13];
+  Serial.print("Transmitting value ");
+  Serial.println(irCodeBuffer, HEX);
+
+  startPreamble();
+}
+
+void powerOnDelay(){
+  Serial.println("finished delay");
+  txMutex = 0;
+  macroFlag = 0;
+}
+
+void delayThenHandle(){
+  
+  if(macroFlag == 2){
     //Continue changing volume
     if (tvVolume < resetVolume){
-      tvVolume ++;
       //Send volume up command
       volumeUp();
     }
     else if(tvVolume > resetVolume){
-      tvVolume --;
       //Send volume down command
       volumeDown();
     }
@@ -266,6 +305,7 @@ void txStopBit(){
   else if(macroFlag == 3){
     macroFlag = 4;
     //Send OK
+    irCodeBuffer = 0;
     irCodeBuffer = irCodeBuffer | deviceAddress;
     irCodeBuffer = irCodeBuffer << 16;
     irCodeBuffer = irCodeBuffer | opCodes[5];
@@ -276,8 +316,9 @@ void txStopBit(){
   }
   else{
     macroFlag = 1;
-    delayTime = 2000;
+    power = 0;
     //Send power
+    irCodeBuffer = 0;
     irCodeBuffer = irCodeBuffer | deviceAddress;
     irCodeBuffer = irCodeBuffer << 16;
     irCodeBuffer = irCodeBuffer | opCodes[1];
@@ -286,37 +327,6 @@ void txStopBit(){
   
     startPreamble();
   }
-  
-}
 
-void volumeUp(){
-  irCodeBuffer = irCodeBuffer | deviceAddress;
-  irCodeBuffer = irCodeBuffer << 16;
-  irCodeBuffer = irCodeBuffer | opCodes[11];
-  Serial.print("Transmitting value ");
-  Serial.println(irCodeBuffer, HEX);
-
-  startPreamble();
-}
-
-void volumeDown(){
-  irCodeBuffer = irCodeBuffer | deviceAddress;
-  irCodeBuffer = irCodeBuffer << 16;
-  irCodeBuffer = irCodeBuffer | opCodes[13];
-  Serial.print("Transmitting value ");
-  Serial.println(irCodeBuffer, HEX);
-
-  startPreamble();
-}
-
-void powerOnDelay(){
-  Serial.println("finished delay");
-  txMutex = 0;
-  macroFlag = 0;
-}
-
-void delayThenHandle(){
-
-}
 }
 
