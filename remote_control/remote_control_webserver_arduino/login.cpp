@@ -87,7 +87,30 @@ void handleAdmin(){
     return;
   }
   /*!ADD HANDLING AND INSERT UPDATE TIMESTAMP!*/
-  server.send(200, "text/html", "You reached the Admin Page<cr>Click <a href='/'>here</a> to access the front end remote.<cr>  <a href='/logout'>Logout</a>");
+  if (server.hasArg("newPassword")){
+    String returnedValue = server.arg("newPassword");
+    Serial.print("New user password = ");
+    Serial.println(returnedValue);
+    basicPassword = returnedValue;
+    server.send(200, "text/html");
+  }
+  else if (server.hasArg("newThreshold")){
+    String returnedValue = server.arg("newThreshold");
+    Serial.print("New threshold to set = ");
+    Serial.println(returnedValue);
+    uint8_t newThresh = atoi(returnedValue.c_str());
+    bool successCheck = updateVolumeThreshold(newThresh);
+    if (successCheck == true){
+      server.send(200, "text/html");
+    }
+  }
+  else{
+    File adminPage = SPIFFS.open("/admin.html", "r");
+    server.streamFile(adminPage, "text/html");
+    adminPage.close();
+    return;
+  }
+  //server.send(200, "text/html", "You reached the Admin Page<cr>Click <a href='/'>here</a> to access the front end remote.<cr>  <a href='/logout'>Logout</a>");
 }
 
 //Post login form and handle response

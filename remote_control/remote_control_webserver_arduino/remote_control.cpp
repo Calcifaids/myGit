@@ -20,7 +20,7 @@
  * 2812.5 = 562.5 us
  */
  
-uint8_t tvVolume = 10, resetVolume = 10, tvChannel = 1, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0, macroFlag = 0, delaySeconds = 0;
+uint8_t tvVolume = 10, resetVolume = 10, tvVolumeThreshold = 80, power = 0, sigmaTarget = 31, sigmaPrescaler = 255, txMutex = 0, macroFlag = 0, delaySeconds = 0;
 int32_t delayTime = 5000000;
 
 //Change from const in later itterations to support multi address
@@ -53,6 +53,15 @@ void txSetup() {
   sigma_delta_setPrescaler(sigmaPrescaler);
   //Target = 31 to make ~38kHz
   sigma_delta_setTarget(0);
+}
+
+bool updateVolumeThreshold(uint8_t newThresh){
+  //Update threshold
+  tvVolumeThreshold = newThresh;
+  //Check if volume needs adjusting with new threshold
+
+
+  return true;
 }
 
 //Returns whether it's suitable to add to buffer.
@@ -158,22 +167,32 @@ void txBegin() {
   //Do normal
   else{
     /*MAKE MORE ROBIUST*/
+    Serial.println("okToSend set to 1");
+    uint8_t okToSend = 1;
     if (power != 0){
       switch(operationBuffer[0]){
         case 11:
-          //Volume up
-          if (tvVolume < 100){
+          //Volume up if within threshold
+          if (tvVolume < tvVolumeThreshold){
             tvVolume ++;
-            Serial.print("New volume = ");
+            Serial.print(F("New volume = "));
             Serial.println(tvVolume);
+          }
+          else{
+            Serial.println("okToSend set to 0");
+            okToSend = 0;
           }
           break;
         case 13:
-          //Volume down
+          //Volume down if within threshold
           if (tvVolume > 0){
             tvVolume --;
-            Serial.print("New volume = ");
+            Serial.print(F("New volume = "));
             Serial.println(tvVolume);
+          }
+          else{
+            Serial.println("okToSend set to 0");
+            okToSend = 0;
           }
           break;
       }
@@ -182,10 +201,16 @@ void txBegin() {
     irCodeBuffer = irCodeBuffer << 16;
     irCodeBuffer = irCodeBuffer | opCodes[operationBuffer[0]];
     shiftOffBuffer();
-    Serial.print("Transmitting value ");
-    Serial.println(irCodeBuffer, HEX);
-  
-    startPreamble();
+    
+    if (okToSend == 1){
+      Serial.print(F("Transmitting value "));
+      Serial.println(irCodeBuffer, HEX);
+      startPreamble();
+    }
+    else{
+      //Not sending volume change so release mutex
+      txMutex = 0;
+    }
   }
 }
 

@@ -14,6 +14,7 @@
 void txSetup();
 bool checkTxMutex();
 bool checkToAddBuffer();
+bool updateVolumeThreshold(uint8_t newThresh);
 void addToBuffer(uint8_t operation);
 void shiftOffBuffer();
 
