@@ -7,7 +7,7 @@ and open the template in the editor.
 <html>
     <head>
         
-        <title>TODO supply a title</title>
+        <title>Remote Control</title>
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
@@ -246,26 +246,43 @@ and open the template in the editor.
             var timeout;
             var loopCheck = 0;
             function parseButton(pressedId){
+                var messageBar = document.getElementById('message_popup');
                 var xmlhttp;
                 xmlhttp = new XMLHttpRequest();
                 var sendCode = "userResponse=" + document.getElementById(pressedId).value;
                 xmlhttp.open('POST','/',true);
+                xmlhttp.onreadystatechange = function(){
+                    if(xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                        
+                        document.getElementById('message_popup').innerHTML = document.getElementById(pressedId).innerHTML + ' pressed';
+
+                        if (loopCheck === 1 ){
+                            clearTimeout(timeout);
+                            messageBar.className = messageBar.className.replace("show", "cancel"); 
+                        }
+                        loopCheck = 1;
+
+                        messageBar.className = "show";
+
+                    }
+                    else if(xmlhttp.readyState == 4 && xmlhttp.status == 204){
+                        document.getElementById('message_popup').innerHTML = document.getElementById(pressedId).innerHTML + " can't be processed due to lock";
+
+                        if (loopCheck === 1 ){
+                            clearTimeout(timeout);
+                            messageBar.className = messageBar.className.replace("show", "cancel"); 
+                        }
+                        loopCheck = 1;
+
+                        messageBar.className = "show";
+                    }
+                };
                 xmlhttp.setRequestHeader('Content-type',' application/x-www-form-urlencoded');
                 xmlhttp.setRequestHeader('Content-Disposition','name=userResponse');
                 xmlhttp.send(sendCode);
             
             
-                var messageBar = document.getElementById('message_popup');
-                document.getElementById('message_popup').innerHTML = document.getElementById(pressedId).innerHTML + ' pressed';
                 
-                if (loopCheck === 1 ){
-                    clearTimeout(timeout);
-                    messageBar.className = messageBar.className.replace("show", "cancel"); 
-                }
-                loopCheck = 1;
-                
-                messageBar.className = "show";
-
                 timeout = setTimeout(function(){ 
                     messageBar.className = messageBar.className.replace("show", "");
                     loopCheck = 0;

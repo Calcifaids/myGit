@@ -20,7 +20,8 @@ void handleNotFound();
 String generateCookie(String);
 bool checkUserAuth();
 bool checkAdminAuth();
-
+void checkTimeout();
+void resetCookies();
 
 const char remote_Control_Page[] PROGMEM = "";
 #endif

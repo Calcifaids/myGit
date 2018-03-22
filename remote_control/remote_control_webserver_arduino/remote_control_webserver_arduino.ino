@@ -17,6 +17,8 @@ void loop(){
   //Check Mutex is free and begin tx
   bool checkResult = checkTxMutex();
   if (checkResult == true){
+    //Reset timeout as a command has occured
     txBegin();
   }
+  checkTimeout();
 }

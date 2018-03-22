@@ -25,6 +25,8 @@ const String loginPage = "<!DOCTYPE html><html><head><title>Login</title></head>
 String cookieChars = "abcdefghijklmnopqrstuvwxyz0123456789", basicUsername = "user", basicPassword = "password", adminUsername = "admin", adminPassword = "admin";
 String userCookie, adminCookie;
 
+uint32_t timeoutTS = 0, timeoutThreshold = 300000;
+
 //Generate cookies on start
 void generateSession(){
   userCookie = generateCookie(userCookie);
@@ -51,23 +53,25 @@ void handleRoot(){
   }
   //If Arg exists then not first call and should process button press
   if(server.hasArg("userResponse")){
-    server.send(204, "text/html");
-    String returnedValue = server.arg("userResponse");
-    Serial.print("User response = ");
-    Serial.println(returnedValue);
-    uint8_t sendCommand = atoi(returnedValue.c_str());
-
-    //Place in to buffer providing TV isn't turning ON or OFF
+    timeoutTS = millis();
     bool checkResult = checkToAddBuffer();
     if (checkResult == true){
+      server.send(200, "text/html");
+      String returnedValue = server.arg("userResponse");
+      Serial.print("User response = ");
+      Serial.println(returnedValue);
+      uint8_t sendCommand = atoi(returnedValue.c_str());
       addToBuffer(sendCommand);
     }
     else{
+      server.send(204, "text/html");
       Serial.println("System currently locked so cannot add to buffer.");
     }
+    
   }
   else{
     //Serve remote_control page
+    timeoutTS = millis();
     File remotePage = SPIFFS.open("/remote_control.html", "r");
     server.streamFile(remotePage, "text/html");
     remotePage.close();
@@ -82,6 +86,7 @@ void handleAdmin(){
     server.sendContent(header);
     return;
   }
+  /*!ADD HANDLING AND INSERT UPDATE TIMESTAMP!*/
   server.send(200, "text/html", "You reached the Admin Page<cr>Click <a href='/'>here</a> to access the front end remote.<cr>  <a href='/logout'>Logout</a>");
 }
 
@@ -92,6 +97,7 @@ void handleLogin(){
     //Check if basic user details correct
     if(server.arg("user") == basicUsername && server.arg("pass") == basicPassword){
       //Set user cookie and redirect to root
+      timeoutTS = millis();
       server.sendHeader("Set-Cookie", "user=" + userCookie);
       server.sendHeader("Set-Cookie", "admin=0");
       server.sendHeader("Location","/");
@@ -102,6 +108,7 @@ void handleLogin(){
     //Check if admin user details correct
     else if(server.arg("user") == adminUsername && server.arg("pass") == adminPassword){
       //Set admin and user cookes and direct to Admin page
+      timeoutTS = millis();
       server.sendHeader("Set-Cookie", "user=" + userCookie);
       server.sendHeader("Set-Cookie", "admin=" + adminCookie);
       server.sendHeader("Location","/admin");
@@ -122,6 +129,7 @@ void handleLogout(){
   server.sendHeader("Location","/login");
   server.sendHeader("Cache-Control","no-cache");
   server.send(301);
+  resetCookies();
 }
 
 //Itterate through alpha-num to generate 32 bit cookie
@@ -155,3 +163,16 @@ bool checkAdminAuth(){
   }
   return false;
 }
+
+void checkTimeout(){
+  //If timeout has occured reset session
+  if(millis() > timeoutTS + timeoutThreshold){
+    resetCookies();
+  }
+}
+
+void resetCookies(){
+  generateSession();
+  timeoutTS = millis();
+}
+
