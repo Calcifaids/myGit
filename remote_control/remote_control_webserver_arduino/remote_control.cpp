@@ -197,6 +197,7 @@ void txBegin() {
           break;
       }
     }
+    irCodeBuffer = 0;
     irCodeBuffer = irCodeBuffer | deviceAddress;
     irCodeBuffer = irCodeBuffer << 16;
     irCodeBuffer = irCodeBuffer | opCodes[operationBuffer[0]];

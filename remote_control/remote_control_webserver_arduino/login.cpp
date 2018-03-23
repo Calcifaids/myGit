@@ -27,6 +27,25 @@ String userCookie, adminCookie;
 
 uint32_t timeoutTS = 0, timeoutThreshold = 300000;
 
+
+
+void writeToLog(){
+  File accessLog = SPIFFS.open ("/accessLog.txt", "r");
+  
+  //Generate files if not present
+  //Write new line to temporary file
+  //append original across to temporary file
+  //Look for EOF (If reach line 101 then delete and make EOF)
+  //Delete original
+  //Rename Copy to original
+  
+  /*
+  File remotePage = SPIFFS.open("/remote_control.html", "r");
+    server.streamFile(remotePage, "text/html");
+    remotePage.close();
+  */
+}
+
 //Generate cookies on start
 void generateSession(){
   userCookie = generateCookie(userCookie);
@@ -105,6 +124,7 @@ void handleAdmin(){
     }
   }
   else{
+    
     File adminPage = SPIFFS.open("/admin.html", "r");
     server.streamFile(adminPage, "text/html");
     adminPage.close();
