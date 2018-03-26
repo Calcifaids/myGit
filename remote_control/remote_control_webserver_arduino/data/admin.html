@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TV Control Admin Page</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body{
+                background-color: #202020;
+            }
+            
+            .headerContainer{
+                display:block;
+                overflow:auto;
+            }
+            .bodyContainer{
+                display:block;
+                width: 50%;
+                margin: auto;
+                margin-top: 20px;
+                border-radius: 5px;
+                background-color: #f2f2f2;
+                padding: 20px;
+            }
+            #logout{
+                float: right;
+                position: relative;
+            }
+            
+            #userPage{
+                float: left;
+                position: relative;
+            }
+            input[type=text], select {
+                width: 100%;
+                padding: 12px 20px;
+                margin: 8px 0;
+                display: inline-block;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            input[type=password], select {
+                width: 100%;
+                padding: 12px 20px;
+                margin: 8px 0;
+                display: inline-block;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            input[type=button] {
+                width: 100%;
+                background-color: #808080;
+                color: white;
+                padding: 14px 20px;
+                margin: 8px 0;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            input[type=button]:hover {
+                background-color: #909090;
+            }
+            
+        </style>
+    </head>
+    <body>
+        <div class="headerContainer">
+                <div id="userPage"><a href="/">User Remote Page</a></div>
+                <div id='logout'><a href='/logout'>Logout</a></div>
+        </div>
+        <div class="bodyContainer">
+            <label for="newPassword">Reset user password (Between 6-18 characters)</label>
+            <input type="password" id="newPassword" placeholder="New Password"><br>
+            <input type="password" id="confirmPassword" placeholder="Repeat Password"><br>
+            <input type="button" value="Set New Password" onclick="parseNewPassword()"><br>
+            <label for="newThreshold">Volume threshold</label>
+            <input type="text" id="newThreshold" placeholder="0-100"><br>
+            <input type="button" value="Set New Threshold" onclick="parseNewVolumeThreshold()"><br>
+        </div>
+        
+        <script language='JavaScript' type='text/javascript'>
+            function parseNewPassword(){
+                var string = document.getElementById("newPassword").value;
+                var confirm = document.getElementById("confirmPassword").value;
+                //strip input
+                string = string.replace(/\\/g, '');
+                confirm = confirm.replace(/\\/g, '');
+                
+                //validate
+                if (confirm == ''){
+                    alert("Please fill the password confirmation box");
+                }
+                else if (string != confirm){
+                    alert("Passwords do match");
+                }
+                else if (string.length > 18){
+                    alert("Password is too large, please reduce it!");      
+                }
+                else if (string.length < 6){
+                    alert("Password is too small, please use more characters!");
+                }
+                else{
+                    //ajax here
+                    var xmlhttp;
+                    xmlhttp = new XMLHttpRequest();
+                    var sendCode = "newPassword=" + string;
+                    xmlhttp.open('POST','/admin',true);
+                    xmlhttp.onreadystatechange = function(){
+                        if(xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                            alert("Successfully changed password.");
+                        }
+                    };
+                    xmlhttp.setRequestHeader('Content-type',' application/x-www-form-urlencoded');
+                    xmlhttp.setRequestHeader('Content-Disposition','name=newPassword');
+                    xmlhttp.send(sendCode);
+                }
+                
+            }
+            
+            function parseNewVolumeThreshold(){
+                var string = document.getElementById("newThreshold").value;
+                //strip input
+                string = string.replace(/\\/g, '');
+
+                //Validate is number
+                if(isNaN(string) || string < 0 || string > 100){
+                    alert("Invalid value, please use a number between 0-100");
+                }
+                else{
+                    //ajax here
+                    var xmlhttp;
+                    xmlhttp = new XMLHttpRequest();
+                    var sendCode = "newThreshold=" + string;
+                    xmlhttp.open('POST','/admin',true);
+                    xmlhttp.onreadystatechange = function(){
+                        if(xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                            alert("Set new threshold to " + string);
+                        }
+                    };
+                    xmlhttp.setRequestHeader('Content-type',' application/x-www-form-urlencoded');
+                    xmlhttp.setRequestHeader('Content-Disposition','name=newThreshold');
+                    xmlhttp.send(sendCode);
+                }
+                
+            }
+        </script>
+    </body>
+</html>
+
