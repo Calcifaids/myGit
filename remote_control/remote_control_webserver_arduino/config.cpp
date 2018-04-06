@@ -8,7 +8,6 @@
 #include <ESP8266WebServer.h>
 #include <ArduinoOTA.h>
 
-
 const char *ssid = "CbrainesRemote";
 const char *password = "turnonthetv";
 
@@ -31,7 +30,6 @@ void setupAP(){
   //Apply client handlers
   server.on("/", handleRoot);
   server.on("/login", handleLogin);
-  /*Add in 301 redirets*/
   server.on("/admin", handleAdmin);
   server.on("/logout", handleLogout);  
   server.onNotFound(handleNotFound);
@@ -41,6 +39,7 @@ void setupAP(){
   size_t headerKeysSize = sizeof(headerKeys)/sizeof(char*);
   server.collectHeaders(headerKeys, headerKeysSize );
 
+  //Initialise setup for phy layer
   txSetup();
   
   //Start HTTP server

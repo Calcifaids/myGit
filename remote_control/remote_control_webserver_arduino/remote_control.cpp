@@ -39,13 +39,12 @@ static const uint16_t opCodes[25] = {0, 0x629D, 0x32CD, 0xA25D, 0xD22D, 0x52AD,
                                     0x40BF, 0xC03F, 0x20DF, 0xA05F, 0x609F,
                                     0xE01F, 0x10EF, 0x906F, 0x00FF};
 
-/*COME BACK AND REMOVE ME AND JUST USE SINGLE BUFFEr*/
 unsigned long irCodeBuffer;
 static uint8_t iterator = 0;
 
 static int8_t operationBuffer[8] = {0};
 
-
+//Set correct values for sig-delta and attach to GPIO4
 void txSetup() {
   sigma_delta_enable();
   //Sigma Attached to D2 (GPIO 4)
@@ -55,12 +54,11 @@ void txSetup() {
   sigma_delta_setTarget(0);
 }
 
+//Update new threshold & pass back bool (in place for future improvements)
 bool updateVolumeThreshold(uint8_t newThresh){
   //Update threshold
   tvVolumeThreshold = newThresh;
   //Check if volume needs adjusting with new threshold
-
-
   return true;
 }
 
@@ -84,9 +82,10 @@ bool checkTxMutex(){
   }
 }
 
+//Push value on to buffer
 void addToBuffer(uint8_t operation){
   for (int i = 0; i < 8; i++){
-    if(operationBuffer[i] == 0){
+    if (operationBuffer[i] == 0){
       operationBuffer[i] = operation;
       return;
     }
@@ -94,6 +93,7 @@ void addToBuffer(uint8_t operation){
   Serial.println("If you have reached here, buffer is full and operation has been dropped");
 }
 
+//Pull value off the buffer
 void shiftOffBuffer(){
   for (int i = 0; i < 8; i++){
     if (operationBuffer[i] == 0){
@@ -111,9 +111,9 @@ void txBegin() {
   txMutex = 1;
   iterator = 0;
   //Check for power command
-  if(operationBuffer[0] == 1){
+  if (operationBuffer[0] == 1){
     //TV turning on
-    if(power == 0){
+    if (power == 0){
       //macroFlag value dictates action
       macroFlag = 1;
       power = 1;
@@ -166,7 +166,6 @@ void txBegin() {
   }
   //Do normal
   else{
-    /*MAKE MORE ROBIUST*/
     Serial.println("okToSend set to 1");
     uint8_t okToSend = 1;
     if (power != 0){
@@ -215,7 +214,7 @@ void txBegin() {
   }
 }
 
-
+//Being preamble and set callback for when preamble high finishes
 void startPreamble(){
   //Setup ISR & TX start preamble
   sigma_delta_setTarget(sigmaTarget);
@@ -242,10 +241,10 @@ void txBitTime(){
 //Itterate through current bit of opCode each cycle delay respectively
 void txWaitTime(){
   sigma_delta_setTarget(0);
-  if(iterator < 32){
+  if (iterator < 32){
     iterator++;
     timer1_attachInterrupt(txBitTime);
-    if(irCodeBuffer & 0x80000000){
+    if (irCodeBuffer & 0x80000000){
        timer1_write(8438);
        irCodeBuffer = irCodeBuffer << 1;
        return;
@@ -263,16 +262,17 @@ void txWaitTime(){
   timer1_write(2813);
 }
 
+//Send stop bit and apply delay if required
 void txStopBit(){
   sigma_delta_setTarget(0);
   unsigned long timestamp = millis();
   Serial.println(timestamp);
   //Check if delay needed for macro power ON/OFF
-  if(macroFlag == 0){
+  if (macroFlag == 0){
     txMutex = 0;
     Serial.println(F("Freeing mutex"));
   }
-  else if(macroFlag == 1){
+  else if (macroFlag == 1){
     Serial.println(F("Delaying to make sure the TV is clear for operation"));
     timer1_attachInterrupt(powerOnDelay);
     timer1_write(delayTime);
@@ -281,10 +281,9 @@ void txStopBit(){
     timer1_attachInterrupt(delayThenHandle);
     timer1_write(1000000);
   }
-  
-  
 }
 
+//set volume + command onto buffer and begin
 void volumeUp(){
   tvVolume ++;
   irCodeBuffer = irCodeBuffer | deviceAddress;
@@ -296,6 +295,7 @@ void volumeUp(){
   startPreamble();
 }
 
+//Set volume - command onto buffer and begin
 void volumeDown(){
   tvVolume --;
   irCodeBuffer = irCodeBuffer | deviceAddress;
@@ -307,6 +307,7 @@ void volumeDown(){
   startPreamble();
 }
 
+//Keep entering this delay until the alloted delay has finished
 void powerOnDelay(){
   static int i = 0;
   //Recursively set timer until correct delay has passed
@@ -323,15 +324,15 @@ void powerOnDelay(){
   }
 }
 
+//Re-enter here to iterate through the macro command
 void delayThenHandle(){
-  
-  if(macroFlag == 2){
+  if (macroFlag == 2){
     //Continue changing volume
     if (tvVolume < resetVolume){
       //Send volume up command
       volumeUp();
     }
-    else if(tvVolume > resetVolume){
+    else if (tvVolume > resetVolume){
       //Send volume down command
       volumeDown();
     }
@@ -347,7 +348,7 @@ void delayThenHandle(){
       startPreamble();
     }
   }
-  else if(macroFlag == 3){
+  else if (macroFlag == 3){
     macroFlag = 4;
     //Send OK
     irCodeBuffer = 0;
